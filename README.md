@@ -489,6 +489,98 @@ pytest
 
 ---
 
+# Descubrimientos tras aplicar la Red Bayesiana
+
+Luego de ejecutar la inferencia probabilística sobre el dataset `weather.csv`, se obtienen los siguientes hallazgos:
+
+## 1. Distribución a Priori: Lluvia
+
+La probabilidad a priori de lluvia es:
+
+| Estado | Probabilidad |
+|--------|-------------:|
+| No | 0.800 |
+| Sí | 0.200 |
+
+Esto indica que en el dataset, la lluvia ocurre el **20%** de las veces. Es decir, la mayoría de los días no llueve.
+
+---
+
+## 2. Relación Lluvia → Aspersor
+
+La CPT del Aspersor revela una **correlación inversa fuerte** con la lluvia:
+
+| Lluvia | P(Aspersor=Sí) | P(Aspersor=No) |
+|--------|---------------:|---------------:|
+| No | 0.575 | 0.425 |
+| Sí | 0.000 | 1.000 |
+
+**Descubrimiento**: Cuando llueve, el aspersor **nunca** se activa (P=0). Cuando no llueve, el aspersor se activa con probabilidad 0.575. Esto tiene sentido lógico: si ya está lloviendo, no hay necesidad de regar el césped.
+
+---
+
+## 3. Relación Lluvia + Aspersor → Césped Mojado
+
+La CPT del Césped Mojado considera **dos padres** simultáneamente:
+
+| Lluvia | Aspersor | P(Césped=Sí) | P(Césped=No) |
+|--------|----------|--------------:|--------------:|
+| No | No | 0.294 | 0.706 |
+| No | Sí | 0.652 | 0.348 |
+| Sí | No | 0.700 | 0.300 |
+| Sí | Sí | 0.000 | 0.000 |
+
+**Descubrimientos**:
+
+- Cuando **no llueve y el aspersor está activado**, la probabilidad de césped mojado sube a **0.652** (vs. 0.294 sin aspersor).
+- Cuando **llueve sin aspersor**, la probabilidad de césped mojado es **0.700** (la lluvia es el factor dominante).
+- La combinación Lluvia=Sí + Aspersor=Sí **no aparece en el dataset**, por eso ambas probabilidades son 0.
+
+---
+
+## 4. Inferencia: P(Lluvia | Césped Mojado = Sí)
+
+La consulta principal del modelo:
+
+$$
+P(Lluvia \mid Césped\_Mojado = Sí)
+$$
+
+Resultado:
+
+| Estado | Probabilidad |
+|--------|-------------:|
+| No | 0.741 |
+| Sí | 0.259 |
+
+**Interpretación**: Al observar que el césped está mojado, la probabilidad de que haya llovido **aumenta** de 0.200 (prior) a 0.259 (posterior). Es decir, el césped mojado es una evidencia **débil pero positiva** de lluvia.
+
+---
+
+## 5. Análisis del Impacto de la Evidencia
+
+| Métrica | Prior (sin evidencia) | Posterior (Césped=Sí) | Cambio |
+|---------|----------------------:|----------------------:|-------:|
+| P(Lluvia=Sí) | 0.200 | 0.259 | +0.059 |
+| P(Lluvia=No) | 0.800 | 0.741 | -0.059 |
+
+La evidencia del césped mojado **actualiza** la creencia sobre la lluvia, pero el efecto es moderado. Esto se debe a que el césped puede mojarse por **dos causas independientes**: la lluvia o el aspersor. El aspersor tiene una alta probabilidad de activarse cuando no llueve (0.575), lo que "diluye" la señal de la lluvia.
+
+---
+
+## 6. Conclusión General
+
+La red bayesiana demuestra cómo la **propagación de evidencia** funciona en la práctica:
+
+1. La lluvia es un evento relativamente raro (20%).
+2. El aspersor compensa la ausencia de lluvia activándose con frecuencia.
+3. El césped mojado puede deberse a múltiples causas, por lo que su observación **no es concluyente** para inferir lluvia.
+4. La inferencia bayesiana cuantifica correctamente esta ambigüedad: P(Lluvia=Sí | Césped=Sí) = 0.259, un valor **moderadamente superior** al prior.
+
+Este ejemplo ilustra el poder de las redes bayesianas para razonar bajo incertidumbre cuando existen **múltiples causas** para un mismo efecto.
+
+---
+
 # Referencias
 
 - Judea Pearl (1988). *Probabilistic Reasoning in Intelligent Systems.*
