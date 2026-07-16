@@ -1,0 +1,5 @@
+pytest
+rich
+seaborn
+matplotlib
+networkx
